@@ -1,11 +1,11 @@
 package ru.sidey383.worlgenerator.generator;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
+import org.bukkit.util.noise.PerlinNoiseGenerator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -13,53 +13,56 @@ import java.util.Random;
 
 public class IslandChunkGenerator extends ChunkGenerator {
 
-    private static final int ELLIPSOID_HORIZONTAL_RADIUS = 100;
-    private static final int ELLIPSOID_VERTICAL_RADIUS = 50;
-    private static final Location location = new Location(null, 0, 100, 0);
+    private final IslandShapeGenerator shapeGenerator;
+
+    public IslandChunkGenerator(IslandShapeGenerator shapeGenerator) {
+        this.shapeGenerator = shapeGenerator;
+    }
 
     @Override
-    public void generateNoise(WorldInfo worldInfo, Random random, int chunkX, int chunkZ, ChunkData chunkData) {
+    public void generateNoise(WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
+        long seed = worldInfo.getSeed();
+        if (!shapeGenerator.hasIslandInChunk(chunkX, chunkZ)) return;
+        PerlinNoiseGenerator perlinNoiseGenerator = new PerlinNoiseGenerator(new Random(seed));
         chunkData.setRegion(0, worldInfo.getMinHeight(), 0, 16, worldInfo.getMaxHeight(), 16, Material.AIR);
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                int dirtLevel = location.getBlockY();
-                int stoneLevel = location.getBlockY() - 5;
-                int bedrockLevel = worldInfo.getMinHeight();
-                chunkData.setBlock(x, dirtLevel, z, Material.GRASS_BLOCK);
-                for (int y = dirtLevel - 1; y > stoneLevel; --y) {
-                    chunkData.setBlock(x, y, z, Material.DIRT);
-                }
-                for (int y = stoneLevel; y > bedrockLevel; --y) {
-                    chunkData.setBlock(x, y, z, Material.STONE);
-                }
-                chunkData.setBlock(x, bedrockLevel, z, Material.BEDROCK);
+        for (int x = 0; x < 16; ++x) {
+            for (int z = 0; z < 16; ++z) {
+                int absX = x + (chunkX << 4);
+                int absZ = z + (chunkZ << 4);
+                Integer bottomLevel = shapeGenerator.bodyBottom(absX, absZ, perlinNoiseGenerator);
+                Integer topLevel = shapeGenerator.bodyTop(absX, absZ, perlinNoiseGenerator);
+                if (bottomLevel == null || topLevel == null || bottomLevel > topLevel) continue;
+                int stoneLevel = Math.max(bottomLevel, topLevel - 4);
+                chunkData.setBlock(x, topLevel, z, Material.GRASS_BLOCK);
+                chunkData.setRegion(x, stoneLevel, z, x+1, topLevel, z+1, Material.DIRT);
+                chunkData.setRegion(x, bottomLevel, z, x+1, stoneLevel, z+1, Material.STONE);
             }
         }
     }
 
     @Override
     public boolean shouldGenerateNoise() {
-        return true; // Мы полностью контролируем генерацию
+        return false;
     }
 
     @Override
     public boolean shouldGenerateSurface() {
-        return false; // Отключаем стандартную генерацию поверхности
+        return true;
     }
 
     @Override
     public boolean shouldGenerateBedrock() {
-        return false; // Мы сами генерируем бедрок
+        return false;
     }
 
     @Override
     public boolean shouldGenerateCaves() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean shouldGenerateDecorations() {
-        return false;
+        return true;
     }
 
     @Override
@@ -69,7 +72,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
 
     @Override
     public boolean shouldGenerateStructures() {
-        return false;
+        return true;
     }
 
     @Override
