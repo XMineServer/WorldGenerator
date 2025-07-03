@@ -1,6 +1,5 @@
 plugins {
     id("java")
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.16"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
 }
 
@@ -10,6 +9,7 @@ bukkit {
     apiVersion = "1.21"
     authors = listOf("sidey383")
     prefix = rootProject.name
+    foliaSupported = true
     commands {
         register("generateworld") {
             description = "Generate new world"
@@ -23,10 +23,10 @@ bukkit {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_22
-    targetCompatibility = JavaVersion.VERSION_22
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     toolchain {
-        languageVersion = JavaLanguageVersion.of(22)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -36,18 +36,18 @@ version = "1.0-SNAPSHOT"
 repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     mavenCentral()
+    maven {
+        name = "thenextlvlReleases"
+        url = uri("https://repo.thenextlvl.net/releases")
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
+    implementation("net.thenextlvl:worlds:3.1.1")
 }
 
 tasks {
-    assemble {
-        dependsOn(reobfJar)
-    }
-
     withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")

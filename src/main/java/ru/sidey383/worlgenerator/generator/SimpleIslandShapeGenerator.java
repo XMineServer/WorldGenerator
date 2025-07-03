@@ -37,7 +37,7 @@ public class SimpleIslandShapeGenerator implements IslandShapeGenerator {
     public Integer bodyBottom(int x, int z, NoiseGenerator noiseGenerator) {
         double xd = x - center.getX();
         double zd = z - center.getZ();
-        double radius = horizontalRadius + calculateAngleNoise(xd, zd, noiseGenerator);
+        double radius = horizontalRadius * (1 + calculateAngleNoise(xd, zd, noiseGenerator));
         double square = 1 - xd * xd / (radius * radius) - zd * zd / (radius * radius);
         if (square < 0) return null;
         double heightNoise = noiseGenerator.noise(x * 0.03, z * 0.03, 1,  0.5, 0.2);
@@ -62,11 +62,11 @@ public class SimpleIslandShapeGenerator implements IslandShapeGenerator {
 
     private double calculateAngleNoise(double x, double z, NoiseGenerator perlinNoiseGenerator) {
         double angle = angle(x, z);
-        double scale = horizontalRadius * formDistortion / 10;
+        double scale = formDistortion / 10;
         double result = 0;
         for (int i = 0; i < 10; i++) {
             double move = Math.PI * i / 10;
-            result += perlinNoiseGenerator.noise(Math.sin(angle + move) * 5, (double) i * 1000, 5, 0.5, 1.6, true) * scale;
+            result += perlinNoiseGenerator.noise(Math.sin(angle + move) * 5, (double) i * 1000, 2, 0.5, 1.6, true) * scale;
         }
         return result;
     }
